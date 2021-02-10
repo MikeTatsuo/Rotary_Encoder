@@ -2,24 +2,24 @@
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
 
-#define PIN_A 2
-#define PIN_B 3
+#define CLK 2
+#define DT 3
 #define SWITCH 4
 
 LiquidCrystal_I2C lcd(0x27, 20, 4);
 
-int previousPinAState;
+int previous;
 int counter = 0;
+int value;
 bool clockwise = true;
-bool rotated = false;
 
 void setup()
 {
-  pinMode(PIN_A, INPUT);
-  pinMode(PIN_B, INPUT);
-  pinMode(SWITCH, INPUT);
+  pinMode(CLK, INPUT);
+  pinMode(DT, INPUT);
+  pinMode(SWITCH, INPUT_PULLUP);
 
-  previousPinAState = digitalRead(PIN_A);
+  previous = digitalRead(CLK);
 
   lcd.init();
   lcd.backlight();
@@ -27,71 +27,44 @@ void setup()
   lcd.setCursor(0, 0);
   lcd.print("** Rotary Encoder **");
 
-  lcd.setCursor(0, 1);
-  lcd.print("A: ");
-  lcd.setCursor(6, 1);
-  lcd.print("B: ");
-  lcd.setCursor(12, 1);
-  lcd.print("SW: ");
-
   lcd.setCursor(0, 2);
   lcd.print("Direction: ");
 
   lcd.setCursor(0, 3);
-  lcd.print("Counter: ");
+  lcd.print("Counter: 0");
 }
 
-void loop()
-{
-  int aState = digitalRead(PIN_A);
-  int bState = digitalRead(PIN_B);
-  int switchState = digitalRead(SWITCH);
+void loop() {  
+  if (!digitalRead(SWITCH)) {
+    counter = 0;
 
-  rotated = aState != previousPinAState;
-
-  lcd.setCursor(2, 1);
-  if (aState == HIGH)
-  {
-    lcd.print(" ON");
-  }
-  else
-  {
-    lcd.print("OFF");
+    lcd.setCursor(11, 2);
+    lcd.print("          ");
+    lcd.setCursor(9, 3);
+    lcd.print("0         ");
   }
 
-  lcd.setCursor(8, 1);
-  if (bState == HIGH)
-  {
-    lcd.print(" ON");
-  }
-  else
-  {
-    lcd.print("OFF");
-  }
-
-  lcd.setCursor(15, 1);
-  if (switchState == LOW)
-  {
-    lcd.print(" ON");
-  }
-  else
-  {
-    lcd.print("OFF");
-  }
-
-  if (rotated)
-  {
-      lcd.setCursor(11, 2);
-    if (bState != aState){
-      lcd.print("Clockwise");
+  value = digitalRead(CLK);
+  if (value != previous){
+    if (digitalRead(DT) != value) {
       counter++;
+      clockwise = true;
+    } else {
+      clockwise = false;
+      counter--;
+    }
+
+    lcd.setCursor(11, 2);
+    if (clockwise) {
+      lcd.print("Clockwise");
     } else {
       lcd.print("Counter  ");
-      counter--;
     }
 
     lcd.setCursor(9, 3);
     lcd.print(counter);
     lcd.print("     ");
   }
+
+  previous = value;
 }
